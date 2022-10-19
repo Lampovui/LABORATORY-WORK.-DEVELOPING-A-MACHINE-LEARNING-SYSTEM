@@ -8,7 +8,7 @@
 | ------ | ------ | ------ |
 | Задание 1 | * | 60 |
 | Задание 2 | * | 20 |
-| Задание 3 | * | 20 |
+| Задание 3 | # | 20 |
 
 знак "*" - задание выполнено; знак "#" - задание не выполнено;
 
@@ -35,39 +35,95 @@
 - ✨Magic ✨
 
 ## Цель работы
-Познакомиться с программными средствами для организции
-передачи данных между инструментами google, Python и Unity
+Познакомиться с программными средствами для создания
+системы машинного обучения и ее интеграции в Unity.
 
 ## Задание 1
-### Реализовать совместную работу и передачу данных в связке Python
-- Google-Sheets – Unity. При выполнении задания используйте видео-материалы и
-исходные данные, предоставленные преподавателя курса.
+### Реализовать систему машинного обучения в связке Python - Google-Sheets – Unity. 
 
 Ход работы:
 
-```py
-import gspread
-import numpy as np
+Код, который я использовал:
 
-gc = gspread.service_account(filename='unitydatasciense-364409-28441679f719.json')
-sh = gc.open("UnitySheets")
-price = np.random.randint(2000, 10000, 11)
-mon = list(range(1, 11))
-i = 0
-while i <= len(mon):
-    i += 1
-    if i == 0:
-        continue
-    else:
-        tempInf = ((price[i - 1] - price[i - 2]) / price[i - 2]) * 100
-        tempInf = str(tempInf)
-        # tempInf = tempInf.replace('.' , ',')
-        sh.sheet1.update(('A' + str(i)), str(i))
-        sh.sheet1.update(('B' + str(i)), str(price[i-1]))
-        sh.sheet1.update(('C' + str(i)), str(tempInf))
-        print(tempInf)
+```C#
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using Unity.MLAgents;
+using Unity.MLAgents.Sensors;
+using Unity.MLAgents.Actuators;
+
+public class RollerAgent : Agent
+{
+    Rigidbody rBody;
+    // Start is called before the first frame update
+    void Start()
+    {
+        rBody = GetComponent<Rigidbody>();
+    }
+
+
+    public Transform Target;
+    public override void OnEpisodeBegin()
+    {
+        if (this.transform.localPosition.y < 0)
+        {
+            this.rBody.angularVelocity = Vector3.zero;
+            this.rBody.velocity = Vector3.zero;
+            this.transform.localPosition = new Vector3(0, 0.5f, 0);
+        }
+        Target.localPosition = new Vector3(Random.value * 8-4, 0.5f, Random.value * 8-4);
+    }
+    
+    public override void CollectObservations(VectorSensor sensor)
+    {
+        sensor.AddObservation(Target.localPosition);
+        sensor.AddObservation(this.transform.localPosition);
+        sensor.AddObservation(rBody.velocity.x);
+        sensor.AddObservation(rBody.velocity.z);
+    }
+
+    public float forceMultiplier = 10;
+
+    public override void OnActionReceived(ActionBuffers actionBuffers)
+    {
+        Vector3 controlSignal = Vector3.zero;
+        controlSignal.x = actionBuffers.ContinuousActions[0];
+        controlSignal.z = actionBuffers.ContinuousActions[1];
+        rBody.AddForce(controlSignal * forceMultiplier);
+
+        float distanceToTarget = Vector3.Distance(this.transform.localPosition, Target.localPosition);
+
+        if (distanceToTarget < 1.42f)
+        {
+            SetReward(1.0f);
+            EndEpisode();
+        }
+        else if (this.transform.localPosition.y < 0)
+        {
+            EndEpisode();
+        }
+    }
+}
+
 
 ```
+
+<img width="1124" alt="Снимок экрана 2022-10-19 в 11 59 12" src="https://user-images.githubusercontent.com/83164641/196645910-099e0e91-b2df-4a79-b06f-684cfd131edc.png">
+
+
+
+
+ - **Обученная модель выглядит следующим образом:**
+
+<img width="1438" alt="Снимок экрана 2022-10-19 в 11 40 46" src="https://user-images.githubusercontent.com/83164641/196641426-a16f5c95-5186-4079-ae34-ee893c376abb.png">
+
+
+
+
+https://user-images.githubusercontent.com/83164641/196642210-34655bb3-69eb-4397-bed8-5eeaf9109c95.mov
+
+
 
 ## Задание 2
 ### Подробно опишите каждую строку файла конфигурации нейронной сети, доступного в папке с файлами проекта по ссылке. Самостоятельно найдите информацию о компонентах Decision Requester, Behavior Parameters, добавленных на сфере.
@@ -127,12 +183,7 @@ SAC: максимальный размер буфера опыта — прим�
 
 ## Выводы
 
-В данной рвботе я научился записывать данные в сервис GoogleSheets с помощью Python, а также считывать данные GoogleSheets по средствам c# скрипта для Unity. 
-
-Самостоятельно разработал сценарий воспроизведения звукового
-сопровождения в Unity, пререработав предложенный код под формат - На основании величины Loss происходит звуковое сопроводение выпавшей карты из пака - чем **ниже** величина **loss** тем **выше** ценность,выпавшей карты)
-
-- Звуковые исходники были взяты из игры **Hearthstone**
+В данной рвботе я ознакомился с параметрами нейронной сети, обучил модель поведения шарика по отношению к кубу, установил Pytorch и понял механизмы обучения.
 
 bb
 
